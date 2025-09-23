@@ -15,7 +15,9 @@ module.exports = {
     hot: true, // Enable Hot Module Replacement
     host: '0.0.0.0', // Listen on all network interfaces
     allowedHosts: 'all', // Allow all hosts for local network access
-    https: true, // Enable HTTPS
+    server: {
+      type: 'https',
+    },
   },
   plugins: [
     new HtmlWebpackPlugin({
