@@ -6,6 +6,7 @@ import {
     MeshBasicMaterial,
     Mesh
 } from 'three';
+import { XRHandModelFactory } from 'three/examples/jsm/webxr/XRHandModelFactory.js';
 
 let scene, camera, renderer;
 let cube;
@@ -52,6 +53,19 @@ function init() {
 
     arButton.addEventListener('click', startAR);
 
+    // Hand Models
+    const handModelFactory = new XRHandModelFactory();
+
+    // Hand 1
+    const hand1 = renderer.xr.getHand(0);
+    hand1.add(handModelFactory.createHandModel(hand1));
+    scene.add(hand1);
+
+    // Hand 2
+    const hand2 = renderer.xr.getHand(1);
+    hand2.add(handModelFactory.createHandModel(hand2));
+    scene.add(hand2);
+
     // Start the render loop
     renderer.setAnimationLoop(render);
 }
@@ -80,7 +94,7 @@ async function startAR() {
 
             const session = await navigator.xr.requestSession('immersive-ar', {
                 requiredFeatures: ['local', 'hit-test'],
-                optionalFeatures: ['dom-overlay', 'anchors']
+                optionalFeatures: ['dom-overlay', 'anchors', 'hand-tracking']
             });
 
             renderer.xr.setSession(session);
