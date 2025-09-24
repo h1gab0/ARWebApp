@@ -12,8 +12,20 @@ let scene, camera, renderer;
 let cube;
 let hand1, hand2;
 const jointMeshes = []; // Array to hold the spheres for the joints
+let statusElement;
 
-function init() {
+// Function to update the on-screen status
+function updateStatus(message) {
+    if (statusElement) {
+        statusElement.innerHTML = message;
+    }
+    console.log(message); // Also log to console for good measure
+}
+
+async function init() {
+    statusElement = document.getElementById('status');
+    updateStatus('Initializing scene...');
+
     // Basic scene setup
     scene = new Scene();
     camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -35,22 +47,32 @@ function init() {
     // Handle window resizing
     window.addEventListener('resize', onWindowResize, false);
 
-    // Add a button to enter AR
-    const arButton = document.createElement('button');
-    arButton.textContent = 'Enter AR';
-    arButton.style.position = 'absolute';
-    arButton.style.bottom = '20px';
-    arButton.style.left = '50%';
-    arButton.style.transform = 'translateX(-50%)';
-    arButton.style.padding = '12px';
-    arButton.style.border = 'none';
-    arButton.style.borderRadius = '4px';
-    arButton.style.backgroundColor = '#fff';
-    arButton.style.color = '#000';
-    arButton.style.cursor = 'pointer';
-    arButton.style.zIndex = '1000';
-    document.body.appendChild(arButton);
-    arButton.addEventListener('click', startAR);
+    // Check for WebXR support
+    if ('xr' in navigator) {
+        try {
+            const supported = await navigator.xr.isSessionSupported('immersive-ar');
+            if (supported) {
+                // Add a button to enter AR
+                const arButton = document.createElement('button');
+                arButton.textContent = 'Enter AR';
+                arButton.style.position = 'absolute';
+                arButton.style.bottom = '20px';
+                arButton.style.left = '50%';
+                arButton.style.transform = 'translateX(-50%)';
+                arButton.style.padding = '12px';
+                // ... (other styles)
+                document.body.appendChild(arButton);
+                arButton.addEventListener('click', startAR);
+                updateStatus('Ready to Enter AR. Please use a compatible mobile device.');
+            } else {
+                updateStatus('AR not supported on this device/browser.');
+            }
+        } catch (e) {
+            updateStatus(`Error checking AR support: ${e.message}`);
+        }
+    } else {
+        updateStatus('WebXR API not found in this browser.');
+    }
 
     // Hand tracking setup
     hand1 = renderer.xr.getHand(0);
@@ -85,9 +107,7 @@ function render(timestamp, frame) {
     }
 
     let jointIndex = 0;
-
     const processHand = (hand) => {
-        // hand.joints is an object containing all 25 joints
         if (hand && hand.joints && Object.keys(hand.joints).length > 0) {
             for (const joint of Object.values(hand.joints)) {
                 const jointMesh = jointMeshes[jointIndex];
@@ -100,9 +120,7 @@ function render(timestamp, frame) {
         }
     };
 
-    // Hide all joints before processing each frame
     jointMeshes.forEach(joint => joint.visible = false);
-
     processHand(hand1);
     processHand(hand2);
 
@@ -111,23 +129,29 @@ function render(timestamp, frame) {
 
 
 async function startAR() {
-    if ('xr' in navigator) {
-        try {
-            renderer.xr.enabled = true;
-            const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['local', 'hit-test'],
-                optionalFeatures: ['anchors', 'hand-tracking']
-            });
-            renderer.xr.setSession(session);
+    updateStatus('Requesting AR session...');
+    try {
+        renderer.xr.enabled = true;
+        const session = await navigator.xr.requestSession('immersive-ar', {
+            requiredFeatures: ['local', 'hit-test'],
+            optionalFeatures: ['anchors', 'hand-tracking']
+        });
 
+        session.addEventListener('end', () => {
+            updateStatus('AR session ended.');
             const arButton = document.querySelector('button');
-            if (arButton) arButton.style.display = 'none';
+            if(arButton) arButton.style.display = 'block';
+        });
 
-        } catch (e) {
-            console.error("Failed to start AR session:", e);
-        }
-    } else {
-        console.error("WebXR not supported in this browser.");
+        renderer.xr.setSession(session);
+        updateStatus('AR session started!');
+
+        const arButton = document.querySelector('button');
+        if (arButton) arButton.style.display = 'none';
+
+    } catch (e) {
+        updateStatus(`Failed to start AR session: ${e.message}`);
+        console.error("Full error:", e);
     }
 }
 
