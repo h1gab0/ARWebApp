@@ -133,8 +133,7 @@ async function startAR() {
     try {
         renderer.xr.enabled = true;
         const session = await navigator.xr.requestSession('immersive-ar', {
-            requiredFeatures: ['local', 'hit-test'],
-            optionalFeatures: ['anchors', 'hand-tracking']
+            optionalFeatures: ['hand-tracking']
         });
 
         session.addEventListener('end', () => {
