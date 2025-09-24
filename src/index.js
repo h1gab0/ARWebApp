@@ -132,9 +132,8 @@ async function startAR() {
     updateStatus('Requesting AR session...');
     try {
         renderer.xr.enabled = true;
-        const session = await navigator.xr.requestSession('immersive-ar', {
-            optionalFeatures: ['hand-tracking']
-        });
+        // Requesting a barebones session with no optional features
+        const session = await navigator.xr.requestSession('immersive-ar');
 
         session.addEventListener('end', () => {
             updateStatus('AR session ended.');
